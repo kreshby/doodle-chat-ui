@@ -1,5 +1,7 @@
+import { ChatScreen } from '../features/chat/components/ChatScreen'
+
 function App() {
-  return <h1>Doodle Chat UI</h1>
+  return <ChatScreen />
 }
 
 export default App
