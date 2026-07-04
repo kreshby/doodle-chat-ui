@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import {
@@ -11,10 +12,12 @@ import {
 import type { ChatMessage } from '../api/chatTypes'
 import { useChatMessages } from '../hooks/useChatMessages'
 import { useCurrentAuthor } from '../hooks/useCurrentAuthor'
+import { useSendChatMessage } from '../hooks/useSendChatMessage'
 import { ChatScreen } from './ChatScreen'
 
 vi.mock('../hooks/useChatMessages')
 vi.mock('../hooks/useCurrentAuthor')
+vi.mock('../hooks/useSendChatMessage')
 
 const message: ChatMessage = {
   _id: 'message-1',
@@ -25,13 +28,24 @@ const message: ChatMessage = {
 
 const refetch = vi.fn()
 const setAuthor = vi.fn()
+const clearAuthor = vi.fn()
+let initialAuthor: string | null
 
 function mockAuthor(author: string | null) {
-  vi.mocked(useCurrentAuthor).mockReturnValue({
-    author,
-    setAuthor,
-    clearAuthor: vi.fn(),
-    hasAuthor: author !== null,
+  initialAuthor = author
+  vi.mocked(useCurrentAuthor).mockImplementation(() => {
+    const [currentAuthor, setCurrentAuthor] = useState(initialAuthor)
+
+    return {
+      author: currentAuthor,
+      setAuthor,
+      clearAuthor: () => {
+        clearAuthor()
+        initialAuthor = null
+        setCurrentAuthor(null)
+      },
+      hasAuthor: currentAuthor !== null,
+    }
   })
 }
 
@@ -53,6 +67,11 @@ function mockMessages(
 beforeEach(() => {
   vi.clearAllMocks()
   mockMessages()
+  vi.mocked(useSendChatMessage).mockReturnValue({
+    mutate: vi.fn(),
+    isPending: false,
+    isError: false,
+  } as unknown as ReturnType<typeof useSendChatMessage>)
 })
 
 afterEach(cleanup)
@@ -64,6 +83,9 @@ describe('ChatScreen', () => {
     render(<ChatScreen />)
 
     expect(screen.getByLabelText('Your name')).toBeInTheDocument()
+    expect(
+      screen.queryByRole('form', { name: 'Message composer' }),
+    ).not.toBeInTheDocument()
     expect(useChatMessages).not.toHaveBeenCalled()
   })
 
@@ -90,7 +112,7 @@ describe('ChatScreen', () => {
     expect(refetch).toHaveBeenCalledOnce()
   })
 
-  it('shows messages and the disabled composer', () => {
+  it('shows messages and an active composer for the current author', () => {
     mockAuthor('Ada')
     mockMessages({
       messages: [message],
@@ -99,8 +121,28 @@ describe('ChatScreen', () => {
 
     render(<ChatScreen />)
 
+    expect(
+      screen.getByRole('button', {
+        name: 'Change author, currently Ada',
+      }),
+    ).toHaveTextContent('You: Ada ▾')
     expect(screen.getByText('Hello Ada')).toBeInTheDocument()
-    expect(screen.getByPlaceholderText('Write a message')).toBeDisabled()
+    expect(screen.getByPlaceholderText('Write a message')).toBeEnabled()
     expect(screen.getByRole('button', { name: 'Send' })).toBeDisabled()
+  })
+
+  it('clears the current author and shows author setup', async () => {
+    const user = userEvent.setup()
+    mockAuthor('Ada')
+
+    render(<ChatScreen />)
+    await user.click(
+      screen.getByRole('button', {
+        name: 'Change author, currently Ada',
+      }),
+    )
+
+    expect(clearAuthor).toHaveBeenCalledOnce()
+    expect(screen.getByLabelText('Your name')).toBeInTheDocument()
   })
 })

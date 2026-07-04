@@ -3,14 +3,19 @@ import { Spinner } from '../../../shared/ui/Spinner'
 import { useChatMessages } from '../hooks/useChatMessages'
 import { useCurrentAuthor } from '../hooks/useCurrentAuthor'
 import { AuthorSetup } from './AuthorSetup'
+import { MessageComposer } from './MessageComposer'
 import { MessageList } from './MessageList'
 import styles from './ChatScreen.module.css'
 
 type AuthoredChatProps = {
   currentAuthor: string
+  onChangeAuthor: () => void
 }
 
-function AuthoredChat({ currentAuthor }: AuthoredChatProps) {
+function AuthoredChat({
+  currentAuthor,
+  onChangeAuthor,
+}: AuthoredChatProps) {
   const { messages, isLoading, isError, refetch } = useChatMessages()
 
   return (
@@ -32,27 +37,16 @@ function AuthoredChat({ currentAuthor }: AuthoredChatProps) {
         />
       )}
 
-      <form className={styles.composer} aria-label="Message composer">
-        <label className={styles.visuallyHidden} htmlFor="chat-message">
-          Message
-        </label>
-        <textarea
-          id="chat-message"
-          rows={1}
-          placeholder="Write a message"
-          disabled
-        />
-        {/* TODO: Connect the composer to the sending flow in the next task. */}
-        <Button type="submit" disabled>
-          Send
-        </Button>
-      </form>
+      <MessageComposer
+        author={currentAuthor}
+        onChangeAuthor={onChangeAuthor}
+      />
     </main>
   )
 }
 
 export function ChatScreen() {
-  const { author, setAuthor } = useCurrentAuthor()
+  const { author, setAuthor, clearAuthor } = useCurrentAuthor()
 
   if (!author) {
     return (
@@ -62,5 +56,10 @@ export function ChatScreen() {
     )
   }
 
-  return <AuthoredChat currentAuthor={author} />
+  return (
+    <AuthoredChat
+      currentAuthor={author}
+      onChangeAuthor={clearAuthor}
+    />
+  )
 }
