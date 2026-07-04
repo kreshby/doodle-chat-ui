@@ -12,3 +12,8 @@
   cursor: not-allowed;
   opacity: 0.6;
 }
+
+.button:focus-visible {
+  outline: 0.1875rem solid var(--color-text);
+  outline-offset: 0.125rem;
+}

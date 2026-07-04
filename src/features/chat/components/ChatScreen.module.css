@@ -1,0 +1,38 @@
+.screen,
+.setupScreen {
+  min-height: 100%;
+  background-color: var(--color-background);
+  background-image: url('../../../assets/chat-background.png');
+}
+
+.screen {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.setupScreen {
+  display: flow-root;
+  min-height: 100dvh;
+  padding-top: var(--space-24);
+}
+
+.status {
+  align-self: center;
+  justify-self: center;
+  width: min(100% - (2 * var(--space-24)), 24rem);
+  padding: var(--space-24);
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  text-align: center;
+  background: var(--color-message-foreign);
+}
+
+.status p {
+  margin: var(--space-8) 0 var(--space-16);
+}
+
+.status [role='status'] + p {
+  margin-bottom: 0;
+}
